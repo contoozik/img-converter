@@ -1,0 +1,189 @@
+import os
+import sys
+from pathlib import Path
+
+try:
+    from PIL import Image
+except ImportError:
+    print("Pillow is not installed.")
+    print("Install it with: py -m pip install pillow")
+    input("\nPress Enter to exit...")
+    raise SystemExit
+
+
+BASE_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = BASE_DIR / "converted"
+
+
+def clear():
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+def setup_console():
+    os.system("title CONVERTOR")
+    os.system("color 0F")
+
+
+def pause():
+    input("\nPress Enter to exit...")
+
+
+def print_header():
+    print(r"""
+  ██████╗ ██████╗ ███╗   ██╗██╗   ██╗███████╗██████╗ ████████╗ ██████╗ ██████╗
+ ██╔════╝██╔═══██╗████╗  ██║██║   ██║██╔════╝██╔══██╗╚══██╔══╝██╔═══██╗██╔══██╗
+ ██║     ██║   ██║██╔██╗ ██║██║   ██║█████╗  ██████╔╝   ██║   ██║   ██║██████╔╝
+ ██║     ██║   ██║██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██╔══██╗   ██║   ██║   ██║██╔══██╗
+ ╚██████╗╚██████╔╝██║ ╚████║ ╚████╔╝ ███████╗██║  ██║   ██║   ╚██████╔╝██║  ██║
+  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝
+    """)
+    print(" " * 34 + "IMAGE CONVERTOR")
+    print("  " + "═" * 98)
+    print()
+
+
+def get_ext_text(path: Path) -> str:
+    ext = path.suffix.lower().replace(".", "")
+    return ext.upper() if ext else "UNKNOWN"
+
+
+def make_output_folder() -> Path:
+    if not OUTPUT_DIR.exists():
+        OUTPUT_DIR.mkdir()
+    return OUTPUT_DIR
+
+
+def unique_output_path(folder: Path, stem: str, ext: str) -> Path:
+    out = folder / f"{stem}.{ext}"
+    counter = 1
+    while out.exists():
+        out = folder / f"{stem}_{counter}.{ext}"
+        counter += 1
+    return out
+
+
+def save_as_png(img: Image.Image, folder: Path, stem: str) -> Path:
+    out = unique_output_path(folder, stem, "png")
+    img.convert("RGBA").save(out, "PNG")
+    return out
+
+
+def save_as_webp(img: Image.Image, folder: Path, stem: str) -> Path:
+    out = unique_output_path(folder, stem, "webp")
+    img.convert("RGBA").save(out, "WEBP", quality=95)
+    return out
+
+
+def save_as_ico(img: Image.Image, folder: Path, stem: str) -> Path:
+    out = unique_output_path(folder, stem, "ico")
+    img.convert("RGBA").save(
+        out,
+        format="ICO",
+        sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
+    )
+    return out
+
+
+def save_as_jpg(img: Image.Image, folder: Path, stem: str) -> Path:
+    out = unique_output_path(folder, stem, "jpg")
+    img.convert("RGB").save(out, "JPEG", quality=95)
+    return out
+
+
+def save_as_bmp(img: Image.Image, folder: Path, stem: str) -> Path:
+    out = unique_output_path(folder, stem, "bmp")
+    img.convert("RGB").save(out, "BMP")
+    return out
+
+
+def save_as_tiff(img: Image.Image, folder: Path, stem: str) -> Path:
+    out = unique_output_path(folder, stem, "tiff")
+    img.save(out, "TIFF")
+    return out
+
+
+def convert_image(src: Path, choice: str, output_folder: Path) -> Path:
+    with Image.open(src) as img:
+        if choice == "1":
+            return save_as_png(img, output_folder, src.stem)
+        elif choice == "2":
+            return save_as_webp(img, output_folder, src.stem)
+        elif choice == "3":
+            return save_as_ico(img, output_folder, src.stem)
+        elif choice == "4":
+            return save_as_jpg(img, output_folder, src.stem)
+        elif choice == "5":
+            return save_as_bmp(img, output_folder, src.stem)
+        elif choice == "6":
+            return save_as_tiff(img, output_folder, src.stem)
+        else:
+            raise ValueError("Invalid option.")
+
+
+def main():
+    setup_console()
+    clear()
+    print_header()
+
+    if len(sys.argv) < 2:
+        print("  No file was dropped onto the shortcut.")
+        print()
+        print("  How to use:")
+        print("  - create a shortcut for start_convertor.bat")
+        print("  - drag an image onto that shortcut")
+        pause()
+        return
+
+    src = Path(sys.argv[1].strip('"'))
+
+    if not src.exists() or not src.is_file():
+        print("  File was not found.")
+        pause()
+        return
+
+    supported = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tiff", ".jfif"}
+    if src.suffix.lower() not in supported:
+        print(f"  Unsupported file type: {src.suffix}")
+        print("  Supported: JPG, JPEG, PNG, WEBP, BMP, GIF, TIFF, JFIF")
+        pause()
+        return
+
+    source_ext = get_ext_text(src)
+
+    print(f"  Your file extension: {source_ext}")
+    print()
+    print("  What do you want to convert it to?")
+    print()
+    print(f"  1. From {source_ext} to PNG")
+    print(f"  2. From {source_ext} to WEBP")
+    print(f"  3. From {source_ext} to ICO")
+    print(f"  4. From {source_ext} to JPG")
+    print(f"  5. From {source_ext} to BMP")
+    print(f"  6. From {source_ext} to TIFF")
+    print()
+
+    choice = input("  Select an option: ").strip()
+
+    if choice not in {"1", "2", "3", "4", "5", "6"}:
+        print()
+        print("  Invalid option.")
+        pause()
+        return
+
+    output_folder = make_output_folder()
+
+    try:
+        result = convert_image(src, choice, output_folder)
+        print()
+        print("  Done successfully.")
+        print(f"  Saved to: {result}")
+        print(f"  Folder: {output_folder}")
+    except Exception as e:
+        print()
+        print(f"  Error: {e}")
+
+    pause()
+
+
+if __name__ == "__main__":
+    main()
